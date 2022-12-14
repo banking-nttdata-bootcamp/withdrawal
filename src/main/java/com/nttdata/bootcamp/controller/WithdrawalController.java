@@ -1,6 +1,7 @@
 package com.nttdata.bootcamp.controller;
 
 import com.nttdata.bootcamp.entity.Withdrawal;
+import com.nttdata.bootcamp.util.Constant;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import com.nttdata.bootcamp.service.WithdrawalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import com.nttdata.bootcamp.entity.dto.WithdrawalDto;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -48,27 +50,31 @@ public class WithdrawalController {
 
 	//Save withdrawal
 	@CircuitBreaker(name = "withdrawal", fallbackMethod = "fallBackGetWithdrawal")
-	@PostMapping(value = "/saveWithdrawal/{commission}/{count}")
-	public Mono<Withdrawal> saveWithdrawal(@RequestBody Withdrawal dataWithdrawal,
-										   @PathVariable("commission") Double commission,
+	@PostMapping(value = "/saveWithdrawal/{count}")
+	public Mono<Withdrawal> saveWithdrawal(@RequestBody WithdrawalDto dataWithdrawal,
 										   @PathVariable("count") Long count){
 		Mono<Long> countMovementsMono = getCountDeposits(dataWithdrawal.getAccountNumber());
 		Long countMovementS =countMovementsMono.block();
-
-		Mono.just(dataWithdrawal).doOnNext(t -> {
+		Withdrawal withdrawal = new Withdrawal();
+		Mono.just(withdrawal).doOnNext(t -> {
 					if(countMovementS>count)
-						t.setCommission(commission);
+						t.setCommission(Constant.COMISSION);
 					else
 						t.setCommission(new Double("0.00"));
-					t.setTypeAccount("passive");
+					t.setDni(dataWithdrawal.getDni());
+					t.setWithdrawalNumber(dataWithdrawal.getWithdrawalNumber());
+					t.setAccountNumber(dataWithdrawal.getAccountNumber());
+					t.setAmount(dataWithdrawal.getAmount());
+					t.setTypeAccount(Constant.TYPE_ACCOUNT);
+					t.setStatus(Constant.STATUS_ACTIVE);
 					t.setCreationDate(new Date());
 					t.setModificationDate(new Date());
 
 
-				}).onErrorReturn(dataWithdrawal).onErrorResume(e -> Mono.just(dataWithdrawal))
+				}).onErrorReturn(withdrawal).onErrorResume(e -> Mono.just(withdrawal))
 				.onErrorMap(f -> new InterruptedException(f.getMessage())).subscribe(x -> LOGGER.info(x.toString()));
 
-		Mono<Withdrawal> withdrawalMono = withdrawalService.saveWithdrawal(dataWithdrawal);
+		Mono<Withdrawal> withdrawalMono = withdrawalService.saveWithdrawal(withdrawal);
 		return withdrawalMono;
 	}
 

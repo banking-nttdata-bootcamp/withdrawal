@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import java.util.Date;
 import javax.validation.Valid;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping(value = "/withdrawal")
 public class WithdrawalController {

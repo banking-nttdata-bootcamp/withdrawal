@@ -51,17 +51,16 @@ public class WithdrawalController {
 
 	//Save withdrawal
 	@CircuitBreaker(name = "withdrawal", fallbackMethod = "fallBackGetWithdrawal")
-	@PostMapping(value = "/saveWithdrawal/{count}")
-	public Mono<Withdrawal> saveWithdrawal(@RequestBody WithdrawalDto dataWithdrawal,
-										   @PathVariable("count") Long count){
+	@PostMapping(value = "/saveWithdrawal")
+	public Mono<Withdrawal> saveWithdrawal(@RequestBody WithdrawalDto dataWithdrawal){
 		Mono<Long> countMovementsMono = getCountDeposits(dataWithdrawal.getAccountNumber());
 		Long countMovementS =countMovementsMono.block();
 		Withdrawal withdrawal = new Withdrawal();
 		Mono.just(withdrawal).doOnNext(t -> {
-					if(countMovementS>count)
+					if(countMovementS>Constant.COUNT_TRANSACTION)
 						t.setCommission(Constant.COMISSION);
 					else
-						t.setCommission(new Double("0.00"));
+						t.setCommission(0.00);
 					t.setDni(dataWithdrawal.getDni());
 					t.setWithdrawalNumber(dataWithdrawal.getWithdrawalNumber());
 					t.setAccountNumber(dataWithdrawal.getAccountNumber());

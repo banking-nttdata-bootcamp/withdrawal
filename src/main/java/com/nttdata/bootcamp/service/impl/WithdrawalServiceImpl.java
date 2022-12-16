@@ -1,7 +1,9 @@
-package com.nttdata.bootcamp.service;
+package com.nttdata.bootcamp.service.impl;
 
 import com.nttdata.bootcamp.entity.Withdrawal;
 import com.nttdata.bootcamp.repository.WithdrawalRepository;
+import com.nttdata.bootcamp.service.KafkaService;
+import com.nttdata.bootcamp.service.WithdrawalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -12,6 +14,9 @@ import reactor.core.publisher.Mono;
 public class WithdrawalServiceImpl implements WithdrawalService {
     @Autowired
     private WithdrawalRepository withdrawalRepository;
+
+    @Autowired
+    private KafkaService kafkaService;
 
     @Override
     public Flux<Withdrawal> findAll() {
@@ -41,7 +46,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
 
         Mono<Withdrawal> withdrawalMono = findByNumber(dataWithdrawal.getWithdrawalNumber())
                 .flatMap(__ -> Mono.<Withdrawal>error(new Error("This Withdrawal  number " + dataWithdrawal.getWithdrawalNumber() + "exists")))
-                .switchIfEmpty(withdrawalRepository.save(dataWithdrawal));
+                .switchIfEmpty(saveTopic(dataWithdrawal));
         return withdrawalMono;
 
 
@@ -82,6 +87,11 @@ public class WithdrawalServiceImpl implements WithdrawalService {
         return transactions;
     }
 
+    public Mono<Withdrawal> saveTopic(Withdrawal dataDeposit){
+        Mono<Withdrawal> monWithdrawal = withdrawalRepository.save(dataDeposit);
+        this.kafkaService.publish(monWithdrawal.block());
+        return monWithdrawal;
+    }
 
 
 

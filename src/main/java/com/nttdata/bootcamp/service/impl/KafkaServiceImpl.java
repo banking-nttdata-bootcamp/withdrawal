@@ -2,7 +2,7 @@ package com.nttdata.bootcamp.service.impl;
 
 import com.nttdata.bootcamp.entity.Withdrawal;
 import com.nttdata.bootcamp.entity.enums.EventType;
-import com.nttdata.bootcamp.events.CreatedEventKafka;
+import com.nttdata.bootcamp.events.WithdrawalCreatedEventKafka;
 import com.nttdata.bootcamp.events.EventKafka;
 import com.nttdata.bootcamp.service.KafkaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class KafkaServiceImpl implements KafkaService {
 
     public void publish(Withdrawal withdrawal) {
 
-        CreatedEventKafka created = new CreatedEventKafka();
+        WithdrawalCreatedEventKafka created = new WithdrawalCreatedEventKafka();
         created.setData(withdrawal);
         created.setId(UUID.randomUUID().toString());
         created.setType(EventType.CREATED);
